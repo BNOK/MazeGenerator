@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 523335111246804963}
   - component: {fileID: 7170441252342612463}
   m_Layer: 0
-  m_Name: RightWall
+  m_Name: leftwall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -125,10 +125,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 302343cb04725304db49c08f0954ca9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _cellHeight: 1
-  _cellWidth: 1
-  _leftWall: {fileID: 6107041919035463449}
-  _rightWall: {fileID: 1435733166161370533}
+  _leftWall: {fileID: 1435733166161370533}
+  _rightWall: {fileID: 6107041919035463449}
   _frontWall: {fileID: 5675838324725623943}
   _backWall: {fileID: 2293811782272338979}
   _visitedWall: {fileID: 2946466089430321630}
@@ -563,7 +561,7 @@ GameObject:
   - component: {fileID: 740037977823495425}
   - component: {fileID: 5946363872685637074}
   m_Layer: 0
-  m_Name: LeftWall
+  m_Name: rightwall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
