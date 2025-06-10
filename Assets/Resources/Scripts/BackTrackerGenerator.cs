@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/* this Implementation of the BACKTRACKING algorithm which is a depth-first-randomized-search is not optimal 
+ * since it can get stack overflow error in many environments in todays systems
+ * you can check the IterativeBacktracker script for a better implementation using a custom Stack
+ */
 public class BackTrackerGenerator : MonoBehaviour
 {
     [SerializeField]
