@@ -551,6 +551,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: BackTrackerGenerator
       objectReference: {fileID: 0}
+    - target: {fileID: 3519944220200541961, guid: d89f81985bb2aa547bb76eafd5ea4413, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3519944220200541961, guid: d89f81985bb2aa547bb76eafd5ea4413, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4831753069617123865, guid: d89f81985bb2aa547bb76eafd5ea4413, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
