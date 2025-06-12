@@ -2,8 +2,11 @@ using UnityEngine;
 
 public class MazeCell : MonoBehaviour
 {
-    //for debug purpose
+    //for backtracker
     public int[] cellIndex = new int[] { -1, -1};
+
+    //for eller
+    public int cellID = -1;
 
     [SerializeField]
     private GameObject _leftWall;

@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
+    // maze parameters
     [SerializeField]
     private int _mazeWidth;
     [SerializeField]
@@ -12,12 +13,20 @@ public class MazeGenerator : MonoBehaviour
 
     private MazeCell[,] _mazeGrid;
 
+    // recursive generator parameters
+
     [SerializeField]
     private GameObject _mazeCell;
 
+    // stack based generator parameters
+    private Stack<MazeCell> _mazeStack;
+
+
     private void Start()
     {
+        // Init Arrays
         _mazeGrid = new MazeCell[_mazeWidth, _mazeHeight];
+        _mazeStack = new Stack<MazeCell>(_mazeWidth * _mazeHeight);
 
         for(int width= 0; width < _mazeWidth; width++)
         {
@@ -32,10 +41,12 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        StartCoroutine( GenerateMaze(null, _mazeGrid[0, 0]));
+        
+
+        StartCoroutine(RecursiveGenerateMaze(null, _mazeGrid[0, 0]));
     }
 
-    IEnumerator GenerateMaze(MazeCell previouscell, MazeCell currentcell)
+    IEnumerator RecursiveGenerateMaze(MazeCell previouscell, MazeCell currentcell)
     {
         currentcell.Visit();
         ClearWalls(previouscell, currentcell);
@@ -48,7 +59,7 @@ public class MazeGenerator : MonoBehaviour
             nextcell = getNextUnivisitedCell(currentcell);
             if (nextcell != null)
             {
-                yield return GenerateMaze(currentcell, nextcell);
+                yield return RecursiveGenerateMaze(currentcell, nextcell);
             }
         }while (nextcell != null);
     }
