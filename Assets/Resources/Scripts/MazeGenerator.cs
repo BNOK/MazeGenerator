@@ -5,152 +5,80 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
-    // maze parameters
     [SerializeField]
     private int _mazeWidth;
     [SerializeField]
     private int _mazeHeight;
 
-    private MazeCell[,] _mazeGrid;
-
-    // recursive generator parameters
+    [SerializeField]
+    private MazeCell _cellPrefab;
 
     [SerializeField]
-    private GameObject _mazeCell;
-
-    // stack based generator parameters
-    private Stack<MazeCell> _mazeStack;
+    private MazeCell[,] _cellMatrix;
 
 
-    private void Start()
+    private void CreateMatrix()
     {
-        // Init Arrays
-        _mazeGrid = new MazeCell[_mazeWidth, _mazeHeight];
-        _mazeStack = new Stack<MazeCell>(_mazeWidth * _mazeHeight);
+        _cellMatrix = new MazeCell[_mazeWidth, _mazeHeight];
 
-        for(int width= 0; width < _mazeWidth; width++)
+        for (int i = 0; i < _mazeWidth; i++)
         {
-            for(int height=0; height < _mazeHeight; height++)
+            for (int j = 0; j < _mazeHeight; j++)
             {
-                GameObject tempcell = Instantiate(_mazeCell, new Vector3(width, 0, height), Quaternion.identity, this.transform);
-                MazeCell cellcomponent = tempcell.GetComponent<MazeCell>();
-                cellcomponent.cellIndex[0] = width;
-                cellcomponent.cellIndex[1] = height;
+                MazeCell cell = new MazeCell();
+                cell.cellID = i + j;
+                cell.cellIndex = new int[] { i, j };
 
-                _mazeGrid[width, height] = cellcomponent;
+                _cellMatrix[i,j] = cell;
             }
-        }
-
-        
-
-        StartCoroutine(RecursiveGenerateMaze(null, _mazeGrid[0, 0]));
-    }
-
-    IEnumerator RecursiveGenerateMaze(MazeCell previouscell, MazeCell currentcell)
-    {
-        currentcell.Visit();
-        ClearWalls(previouscell, currentcell);
-
-        yield return new WaitForSeconds(0.1f);
-
-        MazeCell nextcell;
-        do
-        {
-            nextcell = getNextUnivisitedCell(currentcell);
-            if (nextcell != null)
-            {
-                yield return RecursiveGenerateMaze(currentcell, nextcell);
-            }
-        }while (nextcell != null);
-    }
-
-    void ClearWalls(MazeCell previouscell, MazeCell currentcell)
-    {
-        if (previouscell == null) return;
-
-        int widthdiff = currentcell.cellIndex[0] - previouscell.cellIndex[0];
-        int heightdiff = currentcell.cellIndex[1] - previouscell.cellIndex[1];
-
-        // Z axis
-        if( widthdiff > 0)
-        {
-            previouscell.ClearRightWall();
-            currentcell.ClearLeftWall();
-        }
-        else if (widthdiff < 0)
-        {
-            previouscell.ClearLeftWall();
-            currentcell.ClearRightWall();
-        }
-
-        // X axis
-        if( heightdiff > 0)
-        {
-            previouscell.ClearFrontWall();
-            currentcell.ClearBackWall();
-        }
-        else if (heightdiff < 0)
-        {
-            previouscell.ClearBackWall();
-            currentcell.ClearFrontWall();
         }
     }
 
-    MazeCell getNextUnivisitedCell(MazeCell currentcell)
+    private void GenerateMaze(int currentrowindex)
     {
-        MazeCell[] resultcells = GetUnvisitedNeighbors(currentcell);
+        MazeCell[] currentrow = GetMazeRow(currentrowindex);
+        MergeRow(currentrow);
 
-        if(resultcells.Length > 0)
-        {
-            return resultcells[Random.Range(0, resultcells.Length)];
-        }
-        return null;
     }
-    MazeCell[] GetUnvisitedNeighbors(MazeCell currentcell)
+
+    private MazeCell[] GetMazeRow(int rowindex)
     {
-        List<MazeCell> result = new List<MazeCell>();
+        MazeCell[] result = new MazeCell[_mazeHeight];
 
-        int widthindex = currentcell.cellIndex[0];
-        int heightindex = currentcell.cellIndex[1];
-        MazeCell cellreference;
-
-        if(widthindex +1 < _mazeWidth)
+        for(int index = 0; index < _mazeHeight; index++)
         {
-            cellreference = _mazeGrid[widthindex +1, heightindex];
-            if (!cellreference.getVisited())
-            {
-                result.Add(cellreference);
-            }
+            result[index] = _cellMatrix[rowindex, index];
         }
 
-        if(widthindex -1 >= 0)
-        {
-            cellreference = _mazeGrid[widthindex -1, heightindex];
-            if (!cellreference.getVisited())
-            {
-                result.Add(cellreference);
-            }
-        }
-
-        if (heightindex +1 < _mazeHeight)
-        {
-            cellreference = _mazeGrid[widthindex, heightindex +1];
-            if (!cellreference.getVisited())
-            {
-                result.Add(cellreference);
-            }
-        }
-
-        if(heightindex -1 >= 0)
-        {
-            cellreference = _mazeGrid[widthindex, heightindex -1];
-            if (!cellreference.getVisited())
-            {
-                result.Add(cellreference);
-            }
-        }
-
-        
-        return result.ToArray();
+        return result;
     }
+
+    private void MergeRow(MazeCell[] currentrow)
+    {
+        System.Random random = new System.Random();
+        for (int index = 0; index < currentrow.Length - 1; index++)
+        {
+            if (random.Next(0, 2) == 1 && (currentrow[index].cellID != currentrow[index + 1].cellID))
+            {
+                if (random.Next(0, 2) == 1)
+                {
+                    currentrow[index + 1].cellID = currentrow[index].cellID;
+                }
+                else
+                {
+                    currentrow[index].cellID = currentrow[index + 1].cellID;
+                }
+            }
+
+            currentrow[index].Visit();
+
+        }
+
+        currentrow[currentrow.Length - 1].Visit();
+    }
+
+
+
+
+
 }
