@@ -7,7 +7,7 @@ public class EllerCell : MonoBehaviour
 
     //for eller
     [SerializeField]
-    private int? cellID = null;
+    private int cellID = -1;
 
     [SerializeField]
     private GameObject _leftWall;
@@ -41,16 +41,16 @@ public class EllerCell : MonoBehaviour
         _backWall.SetActive(ison);
     }
 
-    public void SetID(int id = -1)
+    public void SetID(int? id = null)
     {
-        if(id == -1)
+        if(id == null)
         {
             cellID = cellIndex[0] + cellIndex[1];
             setFrontWall(true);
         }
         else
         {
-            cellID = id;
+            cellID = (int)id;
             if (cellIndex[1] != 0)
             {
                 setFrontWall(false);
@@ -60,14 +60,16 @@ public class EllerCell : MonoBehaviour
 
     public int getID()
     {
-        if (cellID.HasValue)
-        {
-            return (int)cellID;
-        }
-        else
-        {
-            Debug.Log("CELL ID IS NOT VALID INT !!!");
-            return -1;
-        }
+        //if (cellID.HasValue)
+        //{
+        //    return (int)cellID;
+        //}
+        //else
+        //{
+        //    Debug.Log("CELL ID IS NOT VALID INT !!!");
+        //    return -1;
+        //}
+
+        return cellID;
     }
 }

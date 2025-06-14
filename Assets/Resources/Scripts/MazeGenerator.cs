@@ -19,7 +19,7 @@ public class MazeGenerator : MonoBehaviour
     private void Start()
     {
         EllerCell[] row = CreateRow(20, 0);
-        StartCoroutine( ProcessRow(row));
+        StartCoroutine( ProcessRow(row, null));
     }
 
     private EllerCell[] CreateRow(int width, int rowindex)
@@ -30,7 +30,7 @@ public class MazeGenerator : MonoBehaviour
         {
             GameObject cellGO = Instantiate(_cellPrefab.gameObject, new Vector3(i, 0, rowindex), Quaternion.identity, this.transform);
             EllerCell cell = cellGO.GetComponent<EllerCell>();
-
+            cell.SetID(-1);
             cell.cellIndex = new int[] { i, rowindex };
             result[i] = cell;
         }
@@ -38,9 +38,9 @@ public class MazeGenerator : MonoBehaviour
         return result;
     }
 
-    private IEnumerator ProcessRow(EllerCell[] currentrow)
+    private IEnumerator ProcessRow(EllerCell[] currentrow, EllerCell[] previousrow)
     {
-        // initializing row 
+        // initializing row (TESTED)
         for(int i = 0;i < currentrow.Length;i++)
         {
             if (currentrow[i].getID() == -1)
@@ -48,6 +48,7 @@ public class MazeGenerator : MonoBehaviour
                 currentrow[i].SetID();
             }
 
+            // right and left sides of the maze
             if (i == 0)
             {
                 currentrow[i].setLeftWall(true);
@@ -57,10 +58,10 @@ public class MazeGenerator : MonoBehaviour
                 currentrow[i].setRightWall(true);
             }
 
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.1f);
         }
 
-        // merging sets
+        // creating sets of the existing row cells , merging cells from different sets randomly (TESTED)
         EllerCell tempcurrent = currentrow[0];
         System.Random random = new System.Random();
 
@@ -69,12 +70,41 @@ public class MazeGenerator : MonoBehaviour
             if(random.Next(0,2) == 1 && tempcurrent.getID() != currentrow[i].getID())
             {
                 currentrow[i].SetID(tempcurrent.getID());
+            }
+            else
+            {
                 tempcurrent.setRightWall(true);
                 currentrow[i].setLeftWall(true);
             }
             tempcurrent = currentrow[i];
 
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        //creating vertical branches randomly from cells in the same sets (minimum 1)
+        List<EllerCell> set = new List<EllerCell> { currentrow[0] };
+        int currentID = currentrow[0].getID();
+
+        System.Random rand = new System.Random();
+
+        for (int i = 1; i< currentrow.Length; i++)
+        {
+            if (currentrow[i].getID() == currentID)
+            {
+                currentrow[i].setBackWall(rand.Next(0,2) == 1);
+                set.Add(currentrow[i]);
+            }
+            else
+            {
+                int randomcell = rand.Next(0, set.Count);
+                set[randomcell].setBackWall(false);
+
+                // reset set
+                set = new List<EllerCell> { currentrow[i] };
+                currentID = currentrow[i].getID();
+            }
+
+            yield return new WaitForSeconds(0.1f);
         }
     }
     
