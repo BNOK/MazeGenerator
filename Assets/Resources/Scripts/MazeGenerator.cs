@@ -11,74 +11,73 @@ public class MazeGenerator : MonoBehaviour
     private int _mazeHeight;
 
     [SerializeField]
-    private MazeCell _cellPrefab;
+    private EllerCell _cellPrefab;
 
-    [SerializeField]
-    private MazeCell[,] _cellMatrix;
+    private EllerCell[,] _mazeMatrix;
 
 
-    private void CreateMatrix()
+    private void Start()
     {
-        _cellMatrix = new MazeCell[_mazeWidth, _mazeHeight];
-
-        for (int i = 0; i < _mazeWidth; i++)
-        {
-            for (int j = 0; j < _mazeHeight; j++)
-            {
-                MazeCell cell = new MazeCell();
-                cell.cellID = i + j;
-                cell.cellIndex = new int[] { i, j };
-
-                _cellMatrix[i,j] = cell;
-            }
-        }
+        EllerCell[] row = CreateRow(20, 0);
+        StartCoroutine( ProcessRow(row));
     }
 
-    private void GenerateMaze(int currentrowindex)
+    private EllerCell[] CreateRow(int width, int rowindex)
     {
-        MazeCell[] currentrow = GetMazeRow(currentrowindex);
-        MergeRow(currentrow);
+        EllerCell[] result = new EllerCell[width];
 
-    }
-
-    private MazeCell[] GetMazeRow(int rowindex)
-    {
-        MazeCell[] result = new MazeCell[_mazeHeight];
-
-        for(int index = 0; index < _mazeHeight; index++)
+        for(int i = 0; i < width; i++)
         {
-            result[index] = _cellMatrix[rowindex, index];
+            GameObject cellGO = Instantiate(_cellPrefab.gameObject, new Vector3(i, 0, rowindex), Quaternion.identity, this.transform);
+            EllerCell cell = cellGO.GetComponent<EllerCell>();
+
+            cell.cellIndex = new int[] { i, rowindex };
+            result[i] = cell;
         }
 
         return result;
     }
 
-    private void MergeRow(MazeCell[] currentrow)
+    private IEnumerator ProcessRow(EllerCell[] currentrow)
     {
-        System.Random random = new System.Random();
-        for (int index = 0; index < currentrow.Length - 1; index++)
+        // initializing row 
+        for(int i = 0;i < currentrow.Length;i++)
         {
-            if (random.Next(0, 2) == 1 && (currentrow[index].cellID != currentrow[index + 1].cellID))
+            if (currentrow[i].getID() == -1)
             {
-                if (random.Next(0, 2) == 1)
-                {
-                    currentrow[index + 1].cellID = currentrow[index].cellID;
-                }
-                else
-                {
-                    currentrow[index].cellID = currentrow[index + 1].cellID;
-                }
+                currentrow[i].SetID();
             }
 
-            currentrow[index].Visit();
+            if (i == 0)
+            {
+                currentrow[i].setLeftWall(true);
+            }
+            if(i == currentrow.Length - 1)
+            {
+                currentrow[i].setRightWall(true);
+            }
 
+            yield return new WaitForSeconds(0.2f);
         }
 
-        currentrow[currentrow.Length - 1].Visit();
+        // merging sets
+        EllerCell tempcurrent = currentrow[0];
+        System.Random random = new System.Random();
+
+        for(int i = 1; i< currentrow.Length; i++)
+        {
+            if(random.Next(0,2) == 1 && tempcurrent.getID() != currentrow[i].getID())
+            {
+                currentrow[i].SetID(tempcurrent.getID());
+                tempcurrent.setRightWall(true);
+                currentrow[i].setLeftWall(true);
+            }
+            tempcurrent = currentrow[i];
+
+            yield return new WaitForSeconds(0.2f);
+        }
     }
+    
 
-
-
-
-
+    
 }

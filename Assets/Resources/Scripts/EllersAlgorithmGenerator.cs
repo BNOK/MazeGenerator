@@ -18,38 +18,56 @@ public class EllersAlgorithmGenerator : MonoBehaviour
     private MazeCell _cellPrefab;
 
     [SerializeField]
-    private MazeCell[,] _mazeStack;
+    private MazeCell[,] _cellMatrix;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    private void CreateMatrix()
     {
-        
+        _cellMatrix = new MazeCell[_mazeWidth, _mazeHeight];
+
+        for (int i = 0; i < _mazeWidth; i++)
+        {
+            for (int j = 0; j < _mazeHeight; j++)
+            {
+                MazeCell cell = new MazeCell();
+                cell.cellID = i + j;
+                cell.cellIndex = new int[] { i, j };
+
+                _cellMatrix[i, j] = cell;
+            }
+        }
     }
 
-    private MazeCell[] CreateRow(int rowindex)
+    private void GenerateMaze(int currentrowindex)
     {
-        MazeCell[] result = new MazeCell[_mazeWidth];
+        MazeCell[] currentrow = GetMazeRow(currentrowindex);
+        MergeRowHorizontal(currentrow);
+        ClearRowWalls(currentrow);
 
-        for(int ID = 0; ID < _mazeWidth; ID++)
+
+
+    }
+
+    private MazeCell[] GetMazeRow(int rowindex)
+    {
+        MazeCell[] result = new MazeCell[_mazeHeight];
+
+        for (int index = 0; index < _mazeHeight; index++)
         {
-            MazeCell cell = new MazeCell();
-            cell.cellID = ID;
-            cell.cellIndex = new int[] {ID, rowindex};
-            result[ID] = cell;
+            result[index] = _cellMatrix[rowindex, index];
         }
-
 
         return result;
     }
 
-    private void MergeRow( ref MazeCell[] currentrow)
+    private void MergeRowHorizontal(MazeCell[] currentrow)
     {
         System.Random random = new System.Random();
-        for(int index = 0; index < currentrow.Length -1; index++)
+        for (int index = 0; index < currentrow.Length - 1; index++)
         {
-            if (random.Next(0,2) == 1 && (currentrow[index].cellID != currentrow[index + 1].cellID))
+            if (random.Next(0, 2) == 1 && (currentrow[index].cellID != currentrow[index + 1].cellID))
             {
-                if(random.Next(0,2) == 1)
+                if (random.Next(0, 2) == 1)
                 {
                     currentrow[index + 1].cellID = currentrow[index].cellID;
                 }
@@ -58,21 +76,68 @@ public class EllersAlgorithmGenerator : MonoBehaviour
                     currentrow[index].cellID = currentrow[index + 1].cellID;
                 }
             }
+
+            currentrow[index].Visit();
+
+        }
+
+        currentrow[currentrow.Length - 1].Visit();
+    }
+
+    private void ClearRowWalls(MazeCell[] currentrow)
+    {
+        MazeCell currentcell = currentrow[0];
+        for (int i = 1; i < currentrow.Length; i++)
+        {
+            if (currentcell.cellID == currentrow[i].cellID)
+            {
+                currentcell.ClearRightWall();
+                currentrow[i].ClearLeftWall();
+            }
+
+            currentcell = currentrow[i];
         }
     }
 
-    private void ClearVerticalWalls(MazeCell[] row)
+    private void MergeRowVertical(MazeCell[] currentrow)
     {
-        MazeCell currentcell = row[0];
-        for(int index = 1;index < row.Length;index++)
-        {
-            if (row[index].cellID == currentcell.cellID)
-            {
-                row[index].ClearLeftWall();
-                currentcell.ClearRightWall();
-            }
+        List<List<MazeCell>> sets = CreateSets(currentrow);
 
-            currentcell = row[index];
+        foreach (var set in sets)
+        {
+            CreateBranch(set);
         }
+    }
+
+    private List<List<MazeCell>> CreateSets(MazeCell[] currentrow)
+    {
+        List<List<MazeCell>> cellsets = new List<List<MazeCell>>();
+        List<MazeCell> tempList = new List<MazeCell> { currentrow[0] };
+
+        for (int i = 1; i < currentrow.Length; i++)
+        {
+            if (currentrow[i].cellID == tempList[0].cellID)
+            {
+                tempList.Add(currentrow[i]);
+            }
+            else
+            {
+                // add set to the list
+                cellsets.Add(tempList);
+
+                //reset and add current element
+                tempList = new List<MazeCell>
+                {
+                    currentrow[i]
+                };
+            }
+        }
+
+        return cellsets;
+    }
+
+    private void CreateBranch(List<MazeCell> branchset)
+    {
+
     }
 }

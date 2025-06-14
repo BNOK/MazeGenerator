@@ -6,7 +6,7 @@ public class MazeCell : MonoBehaviour
     public int[] cellIndex = new int[] { -1, -1};
 
     //for eller
-    public int cellID = -1;
+    public int? cellID = null;
 
     [SerializeField]
     private GameObject _leftWall;
