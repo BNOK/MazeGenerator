@@ -7,7 +7,9 @@ public class EllerCell : MonoBehaviour
 
     //for eller
     [SerializeField]
-    private int cellID = -1;
+    private int cellPublic;
+
+    private int? cellID = null;
 
     [SerializeField]
     private GameObject _leftWall;
@@ -21,55 +23,85 @@ public class EllerCell : MonoBehaviour
     [SerializeField]
     private GameObject _backWall;
 
+    [SerializeField]
+    private GameObject _visitedWall;
+
+    [SerializeField]
+    private Renderer _renderer;
+
     public void setLeftWall(bool ison)
     {
+        //Debug.Log("left wall called !");
         _leftWall.SetActive(ison);
     }
 
     public void setRightWall(bool ison)
     {
+        //Debug.Log("right wall called !");
         _rightWall.SetActive(ison);
     }
 
     public void setFrontWall(bool ison)
     {
+        //Debug.Log("front wall called !");
         _frontWall.SetActive(ison);
     }
 
     public void setBackWall(bool ison)
     {
+        //Debug.Log("back wall called !");
         _backWall.SetActive(ison);
     }
 
-    public void SetID(int? id = null)
+    public void setVisitedWall(bool ison)
     {
-        if(id == null)
+        _visitedWall.SetActive(ison);
+    }
+
+    public void SetID(int id)
+    {
+        cellID = id;
+        cellPublic = id;
+    }
+
+    public int? getID()
+    {
+        return cellID;
+    }
+
+    public void setCellIndex(int[] index, int width, int height)
+    {
+        cellIndex = index;
+        //check column index
+        if (cellIndex[1] == 0)
         {
-            cellID = cellIndex[0] + cellIndex[1];
+            setLeftWall(true);
+        }
+        else if (cellIndex[1] == width-1 )
+        {
+            setRightWall(true);
+        }
+
+        //check row index 
+        if (cellIndex[0] == 0)
+        {
             setFrontWall(true);
         }
-        else
+        else if (cellIndex[0] == height-1 )
         {
-            cellID = (int)id;
-            if (cellIndex[1] != 0)
-            {
-                setFrontWall(false);
-            }
+            setBackWall(true);
         }
     }
 
-    public int getID()
+    public void ChangeVisitedWallColor(bool selected)
     {
-        //if (cellID.HasValue)
-        //{
-        //    return (int)cellID;
-        //}
-        //else
-        //{
-        //    Debug.Log("CELL ID IS NOT VALID INT !!!");
-        //    return -1;
-        //}
-
-        return cellID;
+        if (selected)
+        {
+            _renderer.material.color = Color.red;
+        }
+        else
+        {
+            _renderer.material.color = Color.green;
+        }
     }
 }

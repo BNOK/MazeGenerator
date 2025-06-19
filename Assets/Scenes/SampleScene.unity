@@ -564,8 +564,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77dffb68985866443a342a3b19143a83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _mazeWidth: 20
-  _mazeHeight: 100
+  _mazeWidth: 15
+  _mazeHeight: 10
   _cellPrefab: {fileID: 4098166409325426808, guid: 6f0f57eed102afb46813bd641a4db096, type: 3}
 --- !u!4 &1984587804
 Transform:

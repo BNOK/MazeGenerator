@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,129 +16,115 @@ public class EllersAlgorithmGenerator : MonoBehaviour
     private int _mazeHeight;
 
     [SerializeField]
-    private MazeCell _cellPrefab;
+    private EllerCell _cellPrefab;
 
-    [SerializeField]
-    private MazeCell[,] _cellMatrix;
+    private EllerCell[,] _mazeMatrix;
 
 
-    private void CreateMatrix()
+    private void Start()
     {
-        _cellMatrix = new MazeCell[_mazeWidth, _mazeHeight];
-
-        for (int i = 0; i < _mazeWidth; i++)
-        {
-            for (int j = 0; j < _mazeHeight; j++)
-            {
-                MazeCell cell = new MazeCell();
-                cell.cellID = i + j;
-                cell.cellIndex = new int[] { i, j };
-
-                _cellMatrix[i, j] = cell;
-            }
-        }
-    }
-
-    private void GenerateMaze(int currentrowindex)
-    {
-        MazeCell[] currentrow = GetMazeRow(currentrowindex);
-        MergeRowHorizontal(currentrow);
-        ClearRowWalls(currentrow);
-
-
+        EllerCell[] row = CreateRow(20, 0);
 
     }
 
-    private MazeCell[] GetMazeRow(int rowindex)
+    private EllerCell[] CreateRow(int width, int rowindex)
     {
-        MazeCell[] result = new MazeCell[_mazeHeight];
+        EllerCell[] result = new EllerCell[width];
 
-        for (int index = 0; index < _mazeHeight; index++)
+        for (int i = 0; i < width; i++)
         {
-            result[index] = _cellMatrix[rowindex, index];
+            GameObject cellGO = Instantiate(_cellPrefab.gameObject, new Vector3(i, 0, rowindex), Quaternion.identity, this.transform);
+            EllerCell cell = cellGO.GetComponent<EllerCell>();
+            cell.SetID(-1);
+            cell.cellIndex = new int[] { i, rowindex };
+            result[i] = cell;
         }
 
         return result;
     }
 
-    private void MergeRowHorizontal(MazeCell[] currentrow)
+    private void GenerateMaze(EllerCell[] currentrow)
     {
+        InitRow(currentrow);
+        ProcessRow(currentrow);
+        CreateVerticalBranches(currentrow);
+    }
+
+    private static IEnumerator InitRow(EllerCell[] currentrow)
+    {
+        // initializing row (TESTED)
+        for (int i = 0; i < currentrow.Length; i++)
+        {
+            if (currentrow[i].getID() == -1)
+            {
+                currentrow[i].SetID(0);
+            }
+
+            // right and left sides of the maze
+            if (i == 0)
+            {
+                currentrow[i].setLeftWall(true);
+            }
+            if (i == currentrow.Length - 1)
+            {
+                currentrow[i].setRightWall(true);
+            }
+
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        yield return ProcessRow(currentrow);
+    }
+    private static IEnumerator ProcessRow(EllerCell[] currentrow)
+    {
+        // creating sets of the existing row cells , merging cells from different sets randomly (TESTED)
+        EllerCell tempcurrent = currentrow[0];
         System.Random random = new System.Random();
-        for (int index = 0; index < currentrow.Length - 1; index++)
-        {
-            if (random.Next(0, 2) == 1 && (currentrow[index].cellID != currentrow[index + 1].cellID))
-            {
-                if (random.Next(0, 2) == 1)
-                {
-                    currentrow[index + 1].cellID = currentrow[index].cellID;
-                }
-                else
-                {
-                    currentrow[index].cellID = currentrow[index + 1].cellID;
-                }
-            }
-
-            currentrow[index].Visit();
-
-        }
-
-        currentrow[currentrow.Length - 1].Visit();
-    }
-
-    private void ClearRowWalls(MazeCell[] currentrow)
-    {
-        MazeCell currentcell = currentrow[0];
-        for (int i = 1; i < currentrow.Length; i++)
-        {
-            if (currentcell.cellID == currentrow[i].cellID)
-            {
-                currentcell.ClearRightWall();
-                currentrow[i].ClearLeftWall();
-            }
-
-            currentcell = currentrow[i];
-        }
-    }
-
-    private void MergeRowVertical(MazeCell[] currentrow)
-    {
-        List<List<MazeCell>> sets = CreateSets(currentrow);
-
-        foreach (var set in sets)
-        {
-            CreateBranch(set);
-        }
-    }
-
-    private List<List<MazeCell>> CreateSets(MazeCell[] currentrow)
-    {
-        List<List<MazeCell>> cellsets = new List<List<MazeCell>>();
-        List<MazeCell> tempList = new List<MazeCell> { currentrow[0] };
 
         for (int i = 1; i < currentrow.Length; i++)
         {
-            if (currentrow[i].cellID == tempList[0].cellID)
+            if (random.Next(0, 2) == 1 && tempcurrent.getID() != currentrow[i].getID())
             {
-                tempList.Add(currentrow[i]);
+                //currentrow[i].SetID(tempcurrent.getID());
             }
             else
             {
-                // add set to the list
-                cellsets.Add(tempList);
-
-                //reset and add current element
-                tempList = new List<MazeCell>
-                {
-                    currentrow[i]
-                };
+                tempcurrent.setRightWall(true);
+                currentrow[i].setLeftWall(true);
             }
+            tempcurrent = currentrow[i];
+
+            yield return new WaitForSeconds(0.1f);
         }
 
-        return cellsets;
+        yield return CreateVerticalBranches(currentrow);
     }
-
-    private void CreateBranch(List<MazeCell> branchset)
+    private static IEnumerator CreateVerticalBranches(EllerCell[] currentrow)
     {
+        //creating vertical branches randomly from cells in the same sets (minimum 1)
+        List<EllerCell> set = new List<EllerCell> { currentrow[0] };
+        int currentID = 0;
 
+        System.Random rand = new System.Random();
+
+        for (int i = 1; i < currentrow.Length; i++)
+        {
+            if (currentrow[i].getID() == currentID)
+            {
+                currentrow[i].setBackWall(rand.Next(0, 2) == 1);
+                set.Add(currentrow[i]);
+            }
+            else
+            {
+                int randomcell = rand.Next(0, set.Count);
+                set[randomcell].setBackWall(false);
+
+                // reset set
+                set = new List<EllerCell> { currentrow[i] };
+                currentID = 0;
+            }
+
+            yield return new WaitForSeconds(0.1f);
+        }
     }
 }
