@@ -2,14 +2,9 @@ using UnityEngine;
 
 public class EllerCell : MonoBehaviour
 {
-    //for backtracker
-    public int[] cellIndex = new int[] { -1, -1 };
-
     //for eller
     [SerializeField]
-    private int cellPublic;
-
-    private int? cellID = null;
+    public int cellPublic;
 
     [SerializeField]
     private GameObject _leftWall;
@@ -28,6 +23,19 @@ public class EllerCell : MonoBehaviour
 
     [SerializeField]
     private Renderer _renderer;
+
+    public int[] indexes = new int[2];
+    
+
+    public EllerCell(bool left, bool right, bool front, bool back)
+    {
+        setLeftWall( left );    
+        setRightWall( right );
+        setFrontWall( front );
+        setBackWall( back );
+        setVisitedWall(true);
+    }
+
 
     #region walls
     public void setLeftWall(bool ison)
@@ -64,41 +72,22 @@ public class EllerCell : MonoBehaviour
         return _backWall.activeSelf;
     }
 
+    public bool[] GetWallsState()
+    {
+        bool[] result = new bool[4];
+        result[0] = _leftWall.activeSelf;
+        result[1] = _rightWall.activeSelf;
+        result[2] = _frontWall.activeSelf;
+        result[3] = _backWall.activeSelf;
+
+        return result;
+    }
+
     #endregion
 
-    public void SetID(int? id)
+    public void setCellIndex(int[] index)
     {
-        cellID = id;
-        cellPublic = -1;
-    }
-
-    public int? getID()
-    {
-        return cellID;
-    }
-
-    public void setCellIndex(int[] index, int width, int height)
-    {
-        cellIndex = index;
-        //check column index
-        if (cellIndex[1] == 0)
-        {
-            setLeftWall(true);
-        }
-        else if (cellIndex[1] == width-1 )
-        {
-            setRightWall(true);
-        }
-
-        //check row index 
-        if (cellIndex[0] == 0)
-        {
-            setFrontWall(true);
-        }
-        else if (cellIndex[0] == height-1 )
-        {
-            setBackWall(true);
-        }
+        indexes = index;
     }
 
     public void ChangeVisitedWallColor(bool selected)

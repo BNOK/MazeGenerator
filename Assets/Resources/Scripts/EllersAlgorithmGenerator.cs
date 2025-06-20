@@ -50,7 +50,7 @@ public class EllersAlgorithmGenerator : MonoBehaviour
             {
                 GameObject cellObject = Instantiate(existingrow[i].Item1.gameObject, new Vector3(i, 0, -rowindex), Quaternion.identity, transform);
                 EllerCell tempcomp = cellObject.GetComponent<EllerCell>();
-                tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
+                //tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
                 result.Add((tempcomp, existingrow[i].Item2));
 
             }
@@ -63,7 +63,7 @@ public class EllersAlgorithmGenerator : MonoBehaviour
                 GameObject cellObject = Instantiate(_cellPrefab.gameObject, new Vector3(i, 0, -rowindex), Quaternion.identity, transform);
                 EllerCell tempcomp = cellObject.GetComponent<EllerCell>();
 
-                tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
+                //tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
                 result.Add((tempcomp, _currentSetId));
                 _currentSetId++;
             }
