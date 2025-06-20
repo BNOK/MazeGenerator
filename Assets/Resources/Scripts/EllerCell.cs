@@ -29,6 +29,7 @@ public class EllerCell : MonoBehaviour
     [SerializeField]
     private Renderer _renderer;
 
+    #region walls
     public void setLeftWall(bool ison)
     {
         //Debug.Log("left wall called !");
@@ -58,10 +59,17 @@ public class EllerCell : MonoBehaviour
         _visitedWall.SetActive(ison);
     }
 
-    public void SetID(int id)
+    public bool isBackWallActive()
+    {
+        return _backWall.activeSelf;
+    }
+
+    #endregion
+
+    public void SetID(int? id)
     {
         cellID = id;
-        cellPublic = id;
+        cellPublic = -1;
     }
 
     public int? getID()
