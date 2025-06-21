@@ -9,7 +9,7 @@ public class MazeGenerator : MonoBehaviour
 {
     private List<EllerCell> _mazeList;
 
-
+    #region maze parameters
     [SerializeField]
     private int _mazeWidth;
 
@@ -18,31 +18,32 @@ public class MazeGenerator : MonoBehaviour
 
     [SerializeField]
     private GameObject _cellPrefab;
+    #endregion
 
+    #region generator parameters
     [SerializeField]
     private List<(EllerCell, int)> _mazeRow;
 
-    private static int currentID = 0;
+    private int currentID = 0;
+    #endregion
 
     private void Start()
     {
-        _mazeRow = CreateRow(_mazeWidth, _mazeHeight, 0);
+        _mazeRow = CreateRow(_mazeWidth, _mazeHeight, 0, ref currentID);
         SpawnRow(_mazeRow);
     }
 
-    private List<(EllerCell, int)> CreateRow(int width, int height, int rowindex)
+    private List<(EllerCell, int)> CreateRow(int width, int height, int rowindex, ref int IDref)
     {
         List<(EllerCell, int)> result = new List<(EllerCell, int)> ();
 
         for(int i = 0; i< width; i++)
         {
             EllerCell tempcell = new EllerCell (true,true,true,true);
-            tempcell.setCellIndex(new int[] { i, rowindex });
-
-            result.Add((tempcell, currentID));
-            currentID++;
+            tempcell.SetCellPosition(new int[] { rowindex * width, i });
+            result.Add((tempcell, IDref));
+            IDref++;
         }
-
         return result;
     }
 
@@ -54,19 +55,22 @@ public class MazeGenerator : MonoBehaviour
     {
         for(int i = 0;i< row.Count;i++)
         {
-            EllerCell temp = row[i].Item1 as EllerCell;
-
-            // DEEP COPY
-            GameObject cellGO = Instantiate(_cellPrefab, new Vector3(temp.indexes[0], temp.indexes[1]), Quaternion.identity, transform);
-            EllerCell comp = cellGO.GetComponent<EllerCell>();
-            bool[] walls = temp.GetWallsState();
-            comp.setLeftWall(walls[0]);
-            comp.setRightWall(walls[1]);
-            comp.setFrontWall(walls[2]);
-            comp.setBackWall(walls[3]);
-
-            _mazeList.Add(comp);
+            SpawnCell(row[i].Item1);
         }
+    }
+
+    private void SpawnCell(EllerCell cell)
+    {
+        int[] cellPosition = cell.GetCellPosition();
+        GameObject cellgameobject= Instantiate(_cellPrefab, new Vector3(cellPosition[1], 0, -cellPosition[0]), Quaternion.identity, transform);
+        EllerCell scenecell = cellgameobject.GetComponent<EllerCell>();
+
+        scenecell.setLeftWall(cell.GetLeftWallActive());
+        scenecell.setRightWall(cell.GetRightWallActive());
+        scenecell.setFrontWall(cell.GetFrontWallActive());
+        scenecell.setBackWall(cell.GetBackWallActive());
+
+        _mazeList.Add(scenecell);
     }
 
     #endregion
