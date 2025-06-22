@@ -152,7 +152,7 @@ public class EllersAlgorithmGenerator : MonoBehaviour
 
         for (int i = 0; i < row.Count; i++)
         {
-            if (row[i].Item1.isBackWallActive())
+            if (row[i].Item1.GetBackWallActive())
             {
                 row[i].Item1.setFrontWall(true);
                 row[i].Item1.setBackWall(false);
