@@ -46,17 +46,20 @@ public class MazeGenerator : MonoBehaviour
             // get the new row ready for processing
             RowPreProcessing(currentrow);
             Debug.Log("finished pre processing");
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.02f);
             JoinCells(currentrow);
             Debug.Log("finished joining cells");
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.02f);
             CreateBranches(row, currentrow);
             Debug.Log("finished creating branches");
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.02f);
             row = currentrow;
             Debug.Log("finished this row");
         } while (currentrowIndex < _mazeHeight);
 
+        //LastRowProcessing
+        //currentrow = CreateRow(row, _mazeWidth, currentrowIndex, ref _ID);
+        LastRow(row);
         yield break;
     }
 
@@ -183,6 +186,25 @@ public class MazeGenerator : MonoBehaviour
 
                 row[i].setBackWall(false);
                 row[i].setFrontWall(true);
+            }
+        }
+    }
+
+    private void LastRow(EllerCell[] row)
+    {
+        for(int i = 0;i< row.Length ;i++)
+        {
+            row[i].setBackWall(true);
+        }
+        System.Random random = new System.Random();
+        
+        for(int i = 0; i<row.Length - 1; i++)
+        {
+            if (row[i].GetCellID() != row[i + 1].GetCellID())
+            {
+                row[i].setRightWall(false);
+                row[i + 1].setLeftWall(false);
+                row[i + 1].SetCellID(row[i].GetCellID());
             }
         }
     }
