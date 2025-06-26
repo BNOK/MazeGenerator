@@ -28,6 +28,6 @@ Eller’s algorithm generates a maze **one row at a time**, ensuring:
 Result: a fully-connected maze with **no loops and no inaccessible cells**.
 
 🔗 [Learn more about Eller's Algorithm](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Eller's_algorithm)
-🔗 [CHECK THIS AWESOME SITE ABOUT MAZES]([https://en.wikipedia.org/wiki/Maze_generation_algorithm#Eller's_algorithm](https://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm))
+🔗 [CHECK THIS AWESOME SITE ABOUT MAZES]([https://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm])
 
 ---
