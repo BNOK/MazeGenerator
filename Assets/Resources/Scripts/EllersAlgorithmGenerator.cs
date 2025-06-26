@@ -11,171 +11,204 @@ using UnityEngine;
 
 public class EllersAlgorithmGenerator : MonoBehaviour
 {
+    private List<EllerCell> _mazeList;
+
+    #region maze parameters
     [SerializeField]
     private int _mazeWidth;
+
     [SerializeField]
     private int _mazeHeight;
 
     [SerializeField]
-    private EllerCell _cellPrefab;
-
-    private List<(EllerCell, int?)> _mazeArray;
-
-    private int _currentSetId = 1;
+    private GameObject _cellPrefab;
+    #endregion
+    private int _ID = 0;
 
     private void Start()
     {
-        _mazeArray = new List<(EllerCell, int?)>();
-        int currentIndex = 0;
-
-        // MAZE INITIALIZATION
-        List<(EllerCell, int?)> previousrow = CreateRow(null, currentIndex);
-        ProcessRowSideWalls(currentIndex, previousrow);
-
-        currentIndex++;
-        List<(EllerCell, int?)> currentrow = CreateRow(previousrow, currentIndex);
-        SetupRowForProcessing(currentrow);
+        StartCoroutine(GenerateMaze());
     }
 
-    private List<(EllerCell, int?)> CreateRow(List<(EllerCell, int?)>? existingrow, int rowindex)
+    private IEnumerator GenerateMaze()
     {
+        // maze init
+        int currentrowIndex = 0;
+        EllerCell[] row = CreateRow(null, _mazeWidth, currentrowIndex, ref _ID);
+        JoinCells(row);
+        CreateBranches(null, row);
+        currentrowIndex++;
+        yield return new WaitForSeconds(0.1f);
 
-        //EllerCell[] result = new EllerCell[_mazeWidth];
-        List<(EllerCell, int?)> result = new List<(EllerCell, int?)>();
-
-        if (existingrow != null)
+        EllerCell[] currentrow;
+        //maze generation
+        do
         {
-            result = existingrow;
-            for (int i = 0; i < _mazeWidth; i++)
-            {
-                GameObject cellObject = Instantiate(existingrow[i].Item1.gameObject, new Vector3(i, 0, -rowindex), Quaternion.identity, transform);
-                EllerCell tempcomp = cellObject.GetComponent<EllerCell>();
-                //tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
-                result.Add((tempcomp, existingrow[i].Item2));
+            currentrow = CreateRow(row, _mazeWidth, currentrowIndex, ref _ID);
+            currentrowIndex++;
+            // get the new row ready for processing
+            RowPreProcessing(currentrow);
+            Debug.Log("finished pre processing");
+            yield return new WaitForSeconds(0.02f);
+            JoinCells(currentrow);
+            Debug.Log("finished joining cells");
+            yield return new WaitForSeconds(0.02f);
+            CreateBranches(row, currentrow);
+            Debug.Log("finished creating branches");
+            yield return new WaitForSeconds(0.02f);
+            row = currentrow;
+            Debug.Log("finished this row");
+        } while (currentrowIndex < _mazeHeight);
 
+        //LastRowProcessing
+        //currentrow = CreateRow(row, _mazeWidth, currentrowIndex, ref _ID);
+        LastRow(row);
+        yield break;
+    }
+
+    private EllerCell[] CreateRow(EllerCell[] previous, int width, int row, ref int ID)
+    {
+        List<EllerCell> result = new List<EllerCell>();
+
+
+        if (previous == null)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                GameObject go = Instantiate(_cellPrefab, new Vector3(i + 1, 0, -row - 2), Quaternion.identity, transform);
+                EllerCell cell = go.GetComponent<EllerCell>();
+                if (cell.GetCellID() == -1)
+                {
+                    cell.SetCellID(ID);
+                    ID++;
+                }
+                // maze walls
+                if (i == 0)
+                {
+                    cell.setLeftWall(true);
+                }
+                if (i == width - 1)
+                {
+                    cell.setRightWall(true);
+                }
+                if (row == 0)
+                {
+                    cell.setFrontWall(true);
+                }
+
+                result.Add(cell);
             }
         }
         else
         {
-            for (int i = 0; i < _mazeWidth; i++)
+            // DO A CUSTOM DEEP COPY USING THE INSTANTIATE
+            for (int i = 0; i < width; i++)
             {
-                Tuple<GameObject, int> cell;
-                GameObject cellObject = Instantiate(_cellPrefab.gameObject, new Vector3(i, 0, -rowindex), Quaternion.identity, transform);
-                EllerCell tempcomp = cellObject.GetComponent<EllerCell>();
+                GameObject go = Instantiate(_cellPrefab, new Vector3(i + 1, 0, -row - 2), Quaternion.identity, transform);
+                EllerCell cell = go.GetComponent<EllerCell>();
+                cell.SetCellID(previous[i].GetCellID());
 
-                //tempcomp.setCellIndex(new int[] { rowindex, i }, _mazeWidth, _mazeHeight);
-                result.Add((tempcomp, _currentSetId));
-                _currentSetId++;
+                cell.setLeftWall(previous[i].GetLeftWallActive());
+                cell.setRightWall(previous[i].GetRightWallActive());
+                cell.setFrontWall(previous[i].GetBackWallActive());
+                cell.setBackWall(previous[i].GetBackWallActive());
+
+                result.Add(cell);
             }
         }
-        return result;
+
+        return result.ToArray();
     }
 
-    private void ProcessRowSideWalls(int currentrowindex, List<(EllerCell, int?)> previousrow)
+    private void JoinCells(EllerCell[] row)
     {
-        System.Random rnd = new System.Random();
-        for (int index = 0; index < previousrow.Count - 1; index++)
+
+        for (int i = 0; i < row.Length - 1; i++)
         {
-            if (previousrow[index].Item2 == previousrow[index + 1].Item2)
+            if (row[i].GetCellID() != row[i + 1].GetCellID())
             {
-                previousrow[index].Item1.setRightWall(true);
-                previousrow[index + 1].Item1.setLeftWall(true);
-            }
-            else
-            {
-                if (rnd.Next(0, 2) == 1)
+                float random = UnityEngine.Random.Range(0.0f, 1.0f);
+                //Debug.Log("JOINING !!" + random);
+                if (random > 0.5f)
                 {
-                    previousrow[index].Item1.setRightWall(true);
-                    previousrow[index + 1].Item1.setLeftWall(true);
+                    // joining
+                    row[i + 1].SetCellID(row[i].GetCellID());
                 }
                 else
                 {
-                    previousrow[index].Item1.setRightWall(false);
-                    previousrow[index + 1].Item1.setLeftWall(false);
-
-                    previousrow[index + 1] = (previousrow[index + 1].Item1, previousrow[index].Item2);
-                }
-            }
-            //yield return new WaitForSeconds(0.01f);
-        }
-        //yield return ProcessRowBranches(currentrowindex, previousrow);
-        //yield break;
-    }
-
-    private void ProcessRowBranches(int currentrowindex, List<(EllerCell, int?)> row)
-    {
-
-        int? currentID = row[0].Item2;
-
-        List<EllerCell> tempset = new List<EllerCell>();
-        System.Random rnd = new System.Random();
-
-        for (int index = 0; index < row.Count; index++)
-        {
-            row[index].Item1.ChangeVisitedWallColor(true);
-            if (row[index].Item2.Equals(currentID))
-            {
-                Debug.Log("same set X !");
-                //add to a set collection
-                tempset.Add(row[index].Item1);
-                if (rnd.Next(0, 11) >= 5)
-                {
-                    row[index].Item1.setBackWall(true);
+                    row[i + 1].setLeftWall(true);
+                    row[i].setRightWall(true);
                 }
             }
             else
             {
-                Debug.Log("NOT same set !! ");
-                currentID = row[index].Item2;
-                tempset[rnd.Next(0, tempset.Count)].setBackWall(false);
-
-                //resetting the set
-                tempset.Clear();
-                tempset.Add(row[index].Item1);
+                row[i + 1].setLeftWall(true);
+                row[i].setRightWall(true);
             }
-
-
-            //yield return new WaitForSeconds(0.1f);
-            row[index].Item1.ChangeVisitedWallColor(false);
         }
-
-        //yield break;
     }
 
-    private void SetupRowForProcessing(List<(EllerCell, int?)> row)
+    private void CreateBranches(EllerCell[] previous, EllerCell[] row)
     {
-        for (int i = 0; i < row.Count - 1; i++)
-        {
-            row[i].Item1.setRightWall(false);
-            row[i + 1].Item1.setLeftWall(false);
-        }
+        int currentID = row[0].GetCellID();
+        List<EllerCell> tempset = new List<EllerCell>();
 
-        for (int i = 0; i < row.Count; i++)
+        for (int i = 0; i < row.Length; i++)
         {
-            if (row[i].Item1.GetBackWallActive())
+            if (row[i].GetCellID() != currentID)
             {
-                row[i].Item1.setFrontWall(true);
-                row[i].Item1.setBackWall(false);
-                row[i] = (row[i].Item1, null);
+                int index = UnityEngine.Random.Range(0, tempset.Count);
+                tempset[index].setBackWall(false);
+                currentID = row[i].GetCellID();
+                tempset.Clear();
+                tempset.Add(row[i]);
+
+            }
+            else
+            {
+                bool value = UnityEngine.Random.Range(0.0f, 1.0f) > 0.5f;
+                row[i].setBackWall(value);
+                tempset.Add(row[i]);
             }
         }
-
-        //yield break;
     }
 
-    //private IEnumerator MazeGenerator(List<(EllerCell, int?)> prevrow, List<(EllerCell, int?)> currrow, int index)
-    //{
-    //    do
-    //    {
-    //        currrow = CreateRow(prevrow, index);
-    //        SetupRowForProcessing(currrow);
-    //        yield return ProcessRowSideWalls(index, prevrow);
+    private void RowPreProcessing(EllerCell[] row)
+    {
+        for (int i = 0; i < row.Length; i++)
+        {
+            if (i < row.Length - 1)
+            {
+                row[i].setRightWall(false);
+                row[i + 1].setLeftWall(false);
+            }
+            if (row[i].GetBackWallActive() == true)
+            {
+                row[i].SetCellID(_ID);
+                _ID++;
 
-    //        index++;
-    //        yield return new WaitForSeconds(0.25f);
+                row[i].setBackWall(false);
+                row[i].setFrontWall(true);
+            }
+        }
+    }
 
-    //    } while (index < 10);
+    private void LastRow(EllerCell[] row)
+    {
+        for (int i = 0; i < row.Length; i++)
+        {
+            row[i].setBackWall(true);
+        }
+        System.Random random = new System.Random();
 
-    //    yield break;
-    //}
+        for (int i = 0; i < row.Length - 1; i++)
+        {
+            if (row[i].GetCellID() != row[i + 1].GetCellID())
+            {
+                row[i].setRightWall(false);
+                row[i + 1].setLeftWall(false);
+                row[i + 1].SetCellID(row[i].GetCellID());
+            }
+        }
+    }
 }

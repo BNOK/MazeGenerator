@@ -2,8 +2,10 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Jobs;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
@@ -24,16 +26,102 @@ public class MazeGenerator : MonoBehaviour
 
     private void Start()
     {
+        _mazeList = new List<EllerCell>();
         StartCoroutine(GenerateMaze());
+
     }
 
+
+    private IEnumerator CircularMazeGenerator()
+    {
+        int currentIndex = 0;
+        EllerCell[] currentrow = new EllerCell[_mazeWidth];
+        EllerCell[] previousrow = null;
+
+        if (_mazeList.Count > 0)
+        {
+            do
+            {
+                if (currentIndex == _mazeHeight)
+                {
+                    currentIndex = 0;
+                    LastRow(currentrow);
+                }
+                currentrow = GetRow(previousrow,currentIndex);
+                RowPreProcessing(currentrow);
+                yield return new WaitForSeconds(0.01f);
+                JoinCells(currentrow);
+                yield return new WaitForSeconds(0.01f);
+                CreateBranches(currentrow);
+                previousrow = currentrow;
+
+                currentIndex++;
+                if(_ID > _mazeHeight * _mazeWidth)
+                {
+                    _ID = 0;
+                }
+            } while (true);
+        }
+        yield break;
+    }
+
+    private EllerCell[] GetRow(EllerCell[] previous, int rowindex)
+    {
+        List<EllerCell> result = new List<EllerCell>();
+
+        if (previous == null) 
+        {
+            // for the first row
+            result = _mazeList.GetRange(rowindex * _mazeWidth, _mazeWidth);
+            ResetRow(result, rowindex);
+        }
+        else
+        {
+            result = _mazeList.GetRange(rowindex * _mazeWidth, _mazeWidth);
+            for(int i=0; i< result.Count; i++)
+            {
+                result[i].SetCellID(previous[i].GetCellID());
+
+                result[i].setLeftWall(previous[i].GetLeftWallActive());
+                result[i].setRightWall(previous[i].GetRightWallActive());
+                result[i].setFrontWall(previous[i].GetBackWallActive());
+                result[i].setBackWall(previous[i].GetBackWallActive());
+            }
+        }
+        
+
+        return result.ToArray();
+    }
+    
+    private void ResetRow(List<EllerCell> row, int rowindex)
+    {
+        for(int i=0; i<row.Count; i++)
+        {
+            if(rowindex == 0)
+            {
+                row[i].setFrontWall(true);
+            }
+            if (i == 0)
+            {
+                row[i].setLeftWall(true);
+            }
+            if(i == _mazeWidth)
+            {
+                row[i].setRightWall(true);
+            }
+
+            row[i].SetCellID(-1);
+        }
+    }
+
+    #region BaseGenerator
     private IEnumerator GenerateMaze()
     {
         // maze init
         int currentrowIndex = 0;
         EllerCell[] row = CreateRow(null, _mazeWidth, currentrowIndex, ref _ID);
         JoinCells(row);
-        CreateBranches(null, row);
+        CreateBranches( row);
         currentrowIndex++;
         yield return new WaitForSeconds(0.1f);
 
@@ -50,7 +138,7 @@ public class MazeGenerator : MonoBehaviour
             JoinCells(currentrow);
             Debug.Log("finished joining cells");
             yield return new WaitForSeconds(0.02f);
-            CreateBranches(row, currentrow);
+            CreateBranches(currentrow);
             Debug.Log("finished creating branches");
             yield return new WaitForSeconds(0.02f);
             row = currentrow;
@@ -60,11 +148,12 @@ public class MazeGenerator : MonoBehaviour
         //LastRowProcessing
         //currentrow = CreateRow(row, _mazeWidth, currentrowIndex, ref _ID);
         LastRow(row);
-        yield break;
+        yield return CircularMazeGenerator();
     }
 
     private EllerCell[] CreateRow(EllerCell[] previous, int width, int row, ref int ID)
     {
+        // Create a row , instantiate objects from row data, sets data for walls (for outer walls of the maze)
         List<EllerCell> result = new List<EllerCell>();
 
 
@@ -98,7 +187,9 @@ public class MazeGenerator : MonoBehaviour
         }
         else
         {
-            // DO A CUSTOM DEEP COPY USING THE INSTANTIATE
+            /* DO A CUSTOM DEEP COPY USING THE INSTANTIATE
+             * copy data from the previous row cell to the current cell
+             */
             for (int i = 0; i < width; i++)
             {
                 GameObject go = Instantiate(_cellPrefab, new Vector3(i + 1, 0, -row -2), Quaternion.identity, transform);
@@ -114,12 +205,16 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
+        _mazeList.AddRange(result);
         return result.ToArray();
     }
 
     private void JoinCells(EllerCell[] row)
     {
-        
+        /* randomly selects if two adjacent cells will merge into the same set
+         * if they will merge into the same set knock down the walls
+         * if they are on the same set, create a wall to prevent loops
+         */
         for(int i=0; i< row.Length -1; i++)
         {
             if (row[i].GetCellID() != row[i + 1].GetCellID())
@@ -145,8 +240,11 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-    private void CreateBranches(EllerCell[] previous, EllerCell[] row)
+    private void CreateBranches(EllerCell[] row)
     {
+        /* creates a temporary set holding elements with the same ID
+         * if the ID changes, we choose a random cell from the set to open its walls
+         */
         int currentID = row[0].GetCellID();
         List<EllerCell> tempset = new List<EllerCell>();
 
@@ -208,5 +306,9 @@ public class MazeGenerator : MonoBehaviour
             }
         }
     }
+
+    #endregion
+
+    
 
 }
